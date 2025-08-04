@@ -13,7 +13,7 @@ import {
 
 interface ElicitationSchema {
   type: "object";
-  properties: Record<string, any>;
+  properties: Record<string, unknown>;
   required?: string[];
 }
 
@@ -46,7 +46,7 @@ class ConfirmationMCPServer {
     this.log("ConfirmationMCPServer initialized");
   }
 
-  private log(message: string, ...args: any[]) {
+  private log(message: string, ...args: unknown[]) {
     if (this.isDebug) {
       console.error(
         `[DEBUG] ${new Date().toISOString()} - ${message}`,
@@ -57,7 +57,12 @@ class ConfirmationMCPServer {
 
   private setupHandlers() {
     this.log("Setting up MCP handlers");
+    this.setupElicitationHandler();
+    this.setupToolListHandler();
+    this.setupToolCallHandler();
+  }
 
+  private setupElicitationHandler() {
     // Handle elicitation requests
     this.server.setRequestHandler(ElicitRequestSchema, async (request) => {
       this.log("Received elicitation request:", request);
@@ -93,150 +98,175 @@ class ConfirmationMCPServer {
         content: mockContent,
       };
     });
+  }
 
+  private setupToolListHandler() {
     // List available tools
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
-        tools: [
-          {
-            name: "ask_yes_no",
-            description:
-              "Ask a yes/no confirmation question to the user when the AI needs clarification or verification",
-            inputSchema: {
-              type: "object",
-              properties: {
-                question: {
-                  type: "string",
-                  description:
-                    "The yes/no confirmation question to ask the user",
-                },
-              },
-              required: ["question"],
-            },
-          },
-          {
-            name: "confirm_action",
-            description:
-              "Ask user to confirm an action before proceeding with potentially impactful operations",
-            inputSchema: {
-              type: "object",
-              properties: {
-                action: {
-                  type: "string",
-                  description: "Description of the action to be confirmed",
-                },
-                impact: {
-                  type: "string",
-                  description:
-                    "Potential impact or consequences of this action",
-                },
-                details: {
-                  type: "string",
-                  description: "Additional details about what will happen",
-                },
-              },
-              required: ["action"],
-            },
-          },
-          {
-            name: "clarify_intent",
-            description:
-              "Ask user to clarify their intent when the request is ambiguous or could be interpreted multiple ways",
-            inputSchema: {
-              type: "object",
-              properties: {
-                request_summary: {
-                  type: "string",
-                  description:
-                    "Summary of what the AI understood from the user's request",
-                },
-                ambiguity: {
-                  type: "string",
-                  description: "Description of what is unclear or ambiguous",
-                },
-                options: {
-                  type: "array",
-                  items: {
-                    type: "string",
-                  },
-                  description:
-                    "Possible interpretations or options for the user to choose from",
-                },
-              },
-              required: ["request_summary", "ambiguity"],
-            },
-          },
-          {
-            name: "verify_understanding",
-            description:
-              "Verify that the AI correctly understood the user's requirements before proceeding",
-            inputSchema: {
-              type: "object",
-              properties: {
-                understanding: {
-                  type: "string",
-                  description: "AI's understanding of the user's request",
-                },
-                key_points: {
-                  type: "array",
-                  items: {
-                    type: "string",
-                  },
-                  description: "Key points that the AI wants to confirm",
-                },
-                next_steps: {
-                  type: "string",
-                  description:
-                    "What the AI plans to do next if understanding is correct",
-                },
-              },
-              required: ["understanding"],
-            },
-          },
-          {
-            name: "collect_rating",
-            description:
-              "Collect user satisfaction rating for AI's response or help quality",
-            inputSchema: {
-              type: "object",
-              properties: {
-                subject: {
-                  type: "string",
-                  description:
-                    "What to rate (e.g., 'this response', 'my help with your task')",
-                },
-                description: {
-                  type: "string",
-                  description: "Additional context for the rating request",
-                },
-              },
-              required: ["subject"],
-            },
-          },
-          {
-            name: "elicit_custom",
-            description:
-              "Create a custom confirmation dialog with specific schema when standard tools don't fit",
-            inputSchema: {
-              type: "object",
-              properties: {
-                message: {
-                  type: "string",
-                  description: "Message to display to the user",
-                },
-                schema: {
-                  type: "object",
-                  description:
-                    "JSON schema defining the structure of information to collect",
-                },
-              },
-              required: ["message", "schema"],
-            },
-          },
-        ] satisfies Tool[],
+        tools: this.getToolDefinitions(),
       };
     });
+  }
 
+  private getToolDefinitions(): Tool[] {
+    return [
+      this.createAskYesNoTool(),
+      this.createConfirmActionTool(),
+      this.createClarifyIntentTool(),
+      this.createVerifyUnderstandingTool(),
+      this.createCollectRatingTool(),
+      this.createElicitCustomTool(),
+    ];
+  }
+
+  private createAskYesNoTool(): Tool {
+    return {
+      name: "ask_yes_no",
+      description:
+        "Ask a yes/no confirmation question to the user when the AI needs clarification or verification",
+      inputSchema: {
+        type: "object",
+        properties: {
+          question: {
+            type: "string",
+            description: "The yes/no confirmation question to ask the user",
+          },
+        },
+        required: ["question"],
+      },
+    };
+  }
+
+  private createConfirmActionTool(): Tool {
+    return {
+      name: "confirm_action",
+      description:
+        "Ask user to confirm an action before proceeding with potentially impactful operations",
+      inputSchema: {
+        type: "object",
+        properties: {
+          action: {
+            type: "string",
+            description: "Description of the action to be confirmed",
+          },
+          impact: {
+            type: "string",
+            description: "Potential impact or consequences of this action",
+          },
+          details: {
+            type: "string",
+            description: "Additional details about what will happen",
+          },
+        },
+        required: ["action"],
+      },
+    };
+  }
+
+  private createClarifyIntentTool(): Tool {
+    return {
+      name: "clarify_intent",
+      description:
+        "Ask user to clarify their intent when the request is ambiguous or could be interpreted multiple ways",
+      inputSchema: {
+        type: "object",
+        properties: {
+          request_summary: {
+            type: "string",
+            description: "Summary of what the AI understood from the user's request",
+          },
+          ambiguity: {
+            type: "string",
+            description: "Description of what is unclear or ambiguous",
+          },
+          options: {
+            type: "array",
+            items: {
+              type: "string",
+            },
+            description: "Possible interpretations or options for the user to choose from",
+          },
+        },
+        required: ["request_summary", "ambiguity"],
+      },
+    };
+  }
+
+  private createVerifyUnderstandingTool(): Tool {
+    return {
+      name: "verify_understanding",
+      description:
+        "Verify that the AI correctly understood the user's requirements before proceeding",
+      inputSchema: {
+        type: "object",
+        properties: {
+          understanding: {
+            type: "string",
+            description: "AI's understanding of the user's request",
+          },
+          key_points: {
+            type: "array",
+            items: {
+              type: "string",
+            },
+            description: "Key points that the AI wants to confirm",
+          },
+          next_steps: {
+            type: "string",
+            description: "What the AI plans to do next if understanding is correct",
+          },
+        },
+        required: ["understanding"],
+      },
+    };
+  }
+
+  private createCollectRatingTool(): Tool {
+    return {
+      name: "collect_rating",
+      description:
+        "Collect user satisfaction rating for AI's response or help quality",
+      inputSchema: {
+        type: "object",
+        properties: {
+          subject: {
+            type: "string",
+            description: "What to rate (e.g., 'this response', 'my help with your task')",
+          },
+          description: {
+            type: "string",
+            description: "Additional context for the rating request",
+          },
+        },
+        required: ["subject"],
+      },
+    };
+  }
+
+  private createElicitCustomTool(): Tool {
+    return {
+      name: "elicit_custom",
+      description:
+        "Create a custom confirmation dialog with specific schema when standard tools don't fit",
+      inputSchema: {
+        type: "object",
+        properties: {
+          message: {
+            type: "string",
+            description: "Message to display to the user",
+          },
+          schema: {
+            type: "object",
+            description: "JSON schema defining the structure of information to collect",
+          },
+        },
+        required: ["message", "schema"],
+      },
+    };
+  }
+
+  private setupToolCallHandler() {
     // Handle tool calls
     this.server.setRequestHandler(
       CallToolRequestSchema,
@@ -246,17 +276,17 @@ class ConfirmationMCPServer {
         try {
           switch (name) {
             case "ask_yes_no":
-              return await this.handleAskYesNo(args);
+              return await this.handleAskYesNo(args || {});
             case "confirm_action":
-              return await this.handleConfirmAction(args);
+              return await this.handleConfirmAction(args || {});
             case "clarify_intent":
-              return await this.handleClarifyIntent(args);
+              return await this.handleClarifyIntent(args || {});
             case "verify_understanding":
-              return await this.handleVerifyUnderstanding(args);
+              return await this.handleVerifyUnderstanding(args || {});
             case "collect_rating":
-              return await this.handleCollectRating(args);
+              return await this.handleCollectRating(args || {});
             case "elicit_custom":
-              return await this.handleElicitCustom(args);
+              return await this.handleElicitCustom(args || {});
             default:
               throw new Error(`Unknown tool: ${name}`);
           }
@@ -275,27 +305,27 @@ class ConfirmationMCPServer {
     );
   }
 
-  private generateMockContent(schema: ElicitationSchema): Record<string, any> {
-    const content: Record<string, any> = {};
+  private generateMockContent(schema: ElicitationSchema): Record<string, unknown> {
+    const content: Record<string, unknown> = {};
 
     for (const [key, propSchema] of Object.entries(schema.properties)) {
-      const prop = propSchema as any;
+      const prop = propSchema as Record<string, unknown>;
 
       switch (prop.type) {
         case "string":
-          if (prop.enum) {
+          if (Array.isArray(prop.enum) && prop.enum.length > 0) {
             content[key] = prop.enum[0];
           } else if (prop.format === "email") {
             content[key] = "user@example.com";
           } else if (prop.format === "date") {
             content[key] = "2025-08-04";
           } else {
-            content[key] = `Mock ${prop.title || key}`;
+            content[key] = `Mock ${typeof prop.title === "string" ? prop.title : key}`;
           }
           break;
         case "number":
         case "integer":
-          content[key] = prop.minimum || 1;
+          content[key] = (typeof prop.minimum === "number" ? prop.minimum : 1);
           break;
         case "boolean":
           content[key] = prop.default !== undefined ? prop.default : true;
@@ -333,7 +363,7 @@ class ConfirmationMCPServer {
 
   private async sendElicitationRequest(
     params: ElicitationParams
-  ): Promise<any> {
+  ): Promise<{ action: "accept" | "decline" | "cancel"; content?: Record<string, unknown> }> {
     this.log("Sending elicitation request to client", params);
 
     try {
@@ -341,10 +371,10 @@ class ConfirmationMCPServer {
       const response = await this.server.request(
         {
           method: "elicitation/create",
-          params: params as any,
+          params: params,
         },
         ElicitResultSchema
-      );
+      ) as { action: "accept" | "decline" | "cancel"; content?: Record<string, unknown> };
 
       this.log("Elicitation response received:", response);
       return response;
@@ -356,8 +386,10 @@ class ConfirmationMCPServer {
     }
   }
 
-  private async handleConfirmAction(args: any) {
-    const { action, impact, details } = args;
+  private async handleConfirmAction(args: Record<string, unknown>) {
+    const action = typeof args.action === "string" ? args.action : "Unknown action";
+    const impact = typeof args.impact === "string" ? args.impact : undefined;
+    const details = typeof args.details === "string" ? args.details : undefined;
 
     let message = `Please confirm this action:\n\n**Action**: ${action}`;
     if (impact) {
@@ -391,9 +423,9 @@ class ConfirmationMCPServer {
     try {
       const response = await this.sendElicitationRequest(elicitationParams);
 
-      if (response.action === "accept") {
-        const confirmed = response.content.confirmed;
-        const note = response.content.note;
+      if (response.action === "accept" && response.content) {
+        const confirmed = response.content.confirmed as boolean;
+        const note = response.content.note as string | undefined;
         return {
           content: [
             {
@@ -419,8 +451,10 @@ class ConfirmationMCPServer {
     }
   }
 
-  private async handleClarifyIntent(args: any) {
-    const { request_summary, ambiguity, options } = args;
+  private async handleClarifyIntent(args: Record<string, unknown>) {
+    const request_summary = typeof args.request_summary === "string" ? args.request_summary : "Unknown request";
+    const ambiguity = typeof args.ambiguity === "string" ? args.ambiguity : "Unknown ambiguity";
+    const options = Array.isArray(args.options) ? args.options : undefined;
 
     let message = `I need to clarify your intent:\n\n**My understanding**: ${request_summary}\n\n**What's unclear**: ${ambiguity}`;
 
@@ -437,12 +471,12 @@ class ConfirmationMCPServer {
     };
 
     if (options && options.length > 0) {
-      message += `\n\n**Options**:\n${options.map((opt: string, i: number) => `${i + 1}. ${opt}`).join("\n")}`;
+      message += `\n\n**Options**:\n${options.map((opt: unknown, i: number) => `${i + 1}. ${String(opt)}`).join("\n")}`;
       schema.properties.selected_option = {
         type: "string",
         title: "Select Option",
         description: "Which option best matches your intent?",
-        enum: options,
+        enum: options.map(opt => String(opt)),
       };
     }
 
@@ -480,13 +514,15 @@ class ConfirmationMCPServer {
     }
   }
 
-  private async handleVerifyUnderstanding(args: any) {
-    const { understanding, key_points, next_steps } = args;
+  private async handleVerifyUnderstanding(args: Record<string, unknown>) {
+    const understanding = typeof args.understanding === "string" ? args.understanding : "Unknown understanding";
+    const key_points = Array.isArray(args.key_points) ? args.key_points : undefined;
+    const next_steps = typeof args.next_steps === "string" ? args.next_steps : undefined;
 
     let message = `Please verify my understanding:\n\n**What I understood**: ${understanding}`;
 
     if (key_points && key_points.length > 0) {
-      message += `\n\n**Key points to confirm**:\n${key_points.map((point: string, i: number) => `${i + 1}. ${point}`).join("\n")}`;
+      message += `\n\n**Key points to confirm**:\n${key_points.map((point: unknown, i: number) => `${i + 1}. ${String(point)}`).join("\n")}`;
     }
 
     if (next_steps) {
@@ -547,8 +583,12 @@ class ConfirmationMCPServer {
     }
   }
 
-  private async handleElicitCustom(args: any) {
-    const { message, schema } = args;
+  private async handleElicitCustom(args: Record<string, unknown>) {
+    const message = typeof args.message === "string" ? args.message : "Please provide input";
+    const schema = typeof args.schema === "object" && args.schema !== null ? args.schema as ElicitationSchema : {
+      type: "object" as const,
+      properties: {},
+    };
 
     const elicitationParams: ElicitationParams = {
       message,
@@ -584,8 +624,8 @@ class ConfirmationMCPServer {
     }
   }
 
-  private async handleAskYesNo(args: any) {
-    const { question } = args;
+  private async handleAskYesNo(args: Record<string, unknown>) {
+    const question = typeof args.question === "string" ? args.question : "Please answer yes or no";
 
     const elicitationParams: ElicitationParams = {
       message: question,
@@ -605,7 +645,7 @@ class ConfirmationMCPServer {
     try {
       const response = await this.sendElicitationRequest(elicitationParams);
 
-      if (response.action === "accept") {
+      if (response.action === "accept" && response.content) {
         return {
           content: [
             {
@@ -631,8 +671,9 @@ class ConfirmationMCPServer {
     }
   }
 
-  private async handleCollectRating(args: any) {
-    const { subject, description } = args;
+  private async handleCollectRating(args: Record<string, unknown>) {
+    const subject = typeof args.subject === "string" ? args.subject : "this item";
+    const description = typeof args.description === "string" ? args.description : undefined;
 
     const elicitationParams: ElicitationParams = {
       message: `Please rate ${subject}`,
@@ -659,12 +700,14 @@ class ConfirmationMCPServer {
     try {
       const response = await this.sendElicitationRequest(elicitationParams);
 
-      if (response.action === "accept") {
+      if (response.action === "accept" && response.content) {
+        const rating = response.content.rating as number;
+        const comment = response.content.comment as string | undefined;
         return {
           content: [
             {
               type: "text",
-              text: `User rating for ${subject}: ${response.content.rating}/10${response.content.comment ? `\nComment: ${response.content.comment}` : ""}`,
+              text: `User rating for ${subject}: ${rating}/10${comment ? `\nComment: ${comment}` : ""}`,
             },
           ],
         };
@@ -694,7 +737,7 @@ class ConfirmationMCPServer {
 }
 
 const server = new ConfirmationMCPServer();
-server.run().catch((error: any) => {
+server.run().catch((error: unknown) => {
   console.error("Server error:", error);
   process.exit(1);
 });

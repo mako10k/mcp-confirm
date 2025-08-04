@@ -2,7 +2,9 @@
 
 AI-ユーザー間の復唱確認プロトコルを実装するMCPサーバーです。LLMが不安になったときに、ユーザーに確認を取るためのツールを提供します。
 
-# @mako10k/mcp-confirm
+<a href="https://glama.ai/mcp/servers/@mako10k/mcp-confirm">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@mako10k/mcp-confirm/badge" alt="MCP-Confirm MCP server" />
+</a>
 
 A Model Context Protocol (MCP) server for AI-user confirmation and clarification. This server provides tools for AI assistants (LLMs) to ask users for confirmation when they need clarification or verification.
 

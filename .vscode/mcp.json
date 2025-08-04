@@ -11,13 +11,25 @@
 				"GOOGLE_CX": "${input:google_cx}"
 			}
 		},
+		// "mcp-confirm": {
+		// 	"type": "stdio",
+		// 	"command": "npx",
+		// 	"args": [
+		// 		"@mako10k/mcp-confirm@latest"
+		// 	],
+		// 	"env": {}
+		// }
 		"mcp-confirm": {
 			"type": "stdio",
-			"command": "npx",
+			"command": "npm",
 			"args": [
-				"@mako10k/mcp-confirm@latest"
+				"start"
 			],
-			"env": {}
+			"env": {
+				"MCP_CONFIRM_LOG_PATH": "${workspaceFolder}/.mcp-data/confirmation_history.log",
+				"MCP_CONFIRM_TIMEOUT_MS": "60000",
+				"NODE_ENV": "production"
+			}
 		}
 	},
 	"inputs": [

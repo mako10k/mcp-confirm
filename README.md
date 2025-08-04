@@ -57,6 +57,37 @@ npx @mako10k/mcp-confirm
 
 ## Configuration
 
+### Environment Variables
+
+You can configure the server using environment variables:
+
+- `MCP_CONFIRM_LOG_PATH`: Path to confirmation history log file (default: `.mcp-data/confirmation_history.log`)
+- `MCP_CONFIRM_TIMEOUT_MS`: Default timeout for confirmations in milliseconds (default: `60000`)
+- `NODE_ENV`: Set to `development` to enable debug logging
+
+### Timeout Behavior
+
+The server uses intelligent timeout settings based on confirmation type:
+
+- **Critical actions** (delete, remove operations): 120 seconds
+- **Warning actions**: 90 seconds  
+- **Simple yes/no questions**: 30 seconds
+- **Rating requests**: 20 seconds (reference only)
+- **Other confirmations**: 60 seconds (default)
+
+### Confirmation History Logging
+
+All confirmation interactions are logged to a file for audit purposes. The log includes:
+
+- Timestamp of the request
+- Confirmation type
+- Full request and response data
+- Response time in milliseconds
+- Success/failure status
+- Error messages (if any)
+
+The log directory (`.mcp-data/`) will be created automatically if it doesn't exist.
+
 ### VS Code Integration
 
 Add to your `.vscode/mcp.json`:
@@ -92,7 +123,12 @@ Location: `~/.config/claude/config.json`
     "servers": {
       "mcp-confirm": {
         "command": "npx",
-        "args": ["@mako10k/mcp-confirm"]
+        "args": ["@mako10k/mcp-confirm"],
+        "env": {
+          "MCP_CONFIRM_LOG_PATH": "~/.mcp-data/confirmation_history.log",
+          "MCP_CONFIRM_TIMEOUT_MS": "60000",
+          "NODE_ENV": "production"
+        }
       }
     }
   }

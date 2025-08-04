@@ -10,6 +10,8 @@ import {
   ElicitRequestSchema,
   ElicitResultSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import * as fs from "fs";
+import * as path from "path";
 
 interface ElicitationSchema {
   type: "object";
@@ -20,15 +22,33 @@ interface ElicitationSchema {
 interface ElicitationParams {
   message: string;
   requestedSchema: ElicitationSchema;
+  timeoutMs?: number; // Custom timeout in milliseconds
   [key: string]: unknown;
+}
+
+interface ConfirmationLogEntry {
+  timestamp: string;
+  confirmationType: string;
+  request: ElicitationParams;
+  response: { action: "accept" | "decline" | "cancel"; content?: Record<string, unknown> };
+  responseTimeMs: number;
+  success: boolean;
+  error?: string;
+}
+
+interface ServerConfig {
+  confirmationHistoryPath: string;
+  defaultTimeoutMs: number;
 }
 
 class ConfirmationMCPServer {
   private server: Server;
   private isDebug: boolean;
+  private config: ServerConfig;
 
   constructor() {
     this.isDebug = process.env.NODE_ENV === "development";
+    this.config = this.loadConfig();
 
     this.server = new Server(
       {
@@ -52,6 +72,39 @@ class ConfirmationMCPServer {
         `[DEBUG] ${new Date().toISOString()} - ${message}`,
         ...args
       );
+    }
+  }
+
+  private loadConfig(): ServerConfig {
+    const defaultConfig: ServerConfig = {
+      confirmationHistoryPath: ".mcp-data/confirmation_history.log",
+      defaultTimeoutMs: 60000, // 60 seconds
+    };
+
+    // TODO: Load from config file if exists
+    // For now, use environment variables or defaults
+    return {
+      confirmationHistoryPath: process.env.MCP_CONFIRM_LOG_PATH || defaultConfig.confirmationHistoryPath,
+      defaultTimeoutMs: parseInt(process.env.MCP_CONFIRM_TIMEOUT_MS || String(defaultConfig.defaultTimeoutMs), 10),
+    };
+  }
+
+  private async ensureLogDirectory() {
+    const logDir = path.dirname(this.config.confirmationHistoryPath);
+    try {
+      await fs.promises.mkdir(logDir, { recursive: true });
+    } catch (error) {
+      this.log("Failed to create log directory:", error);
+    }
+  }
+
+  private async logConfirmation(entry: ConfirmationLogEntry) {
+    try {
+      await this.ensureLogDirectory();
+      const logLine = JSON.stringify(entry) + "\n";
+      await fs.promises.appendFile(this.config.confirmationHistoryPath, logLine, "utf8");
+    } catch (error) {
+      this.log("Failed to write confirmation log:", error);
     }
   }
 
@@ -366,6 +419,9 @@ class ConfirmationMCPServer {
   ): Promise<{ action: "accept" | "decline" | "cancel"; content?: Record<string, unknown> }> {
     this.log("Sending elicitation request to client", params);
 
+    const startTime = Date.now();
+    const timeoutMs = params.timeoutMs || this.config.defaultTimeoutMs;
+    
     try {
       // Use the server's request method to send elicitation to client
       const response = await this.server.request(
@@ -373,17 +429,77 @@ class ConfirmationMCPServer {
           method: "elicitation/create",
           params: params,
         },
-        ElicitResultSchema
+        ElicitResultSchema,
+        {
+          timeout: timeoutMs,
+        }
       ) as { action: "accept" | "decline" | "cancel"; content?: Record<string, unknown> };
 
+      const responseTimeMs = Date.now() - startTime;
       this.log("Elicitation response received:", response);
+
+      // Log the confirmation
+      await this.logConfirmation({
+        timestamp: new Date().toISOString(),
+        confirmationType: this.getConfirmationType(params),
+        request: params,
+        response,
+        responseTimeMs,
+        success: true,
+      });
+
       return response;
     } catch (error) {
+      const responseTimeMs = Date.now() - startTime;
       this.log("Elicitation request failed:", error);
+
+      // Log the failed confirmation
+      await this.logConfirmation({
+        timestamp: new Date().toISOString(),
+        confirmationType: this.getConfirmationType(params),
+        request: params,
+        response: { action: "cancel" },
+        responseTimeMs,
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
       throw new Error(
         `Elicitation failed: ${error instanceof Error ? error.message : String(error)}`
       );
     }
+  }
+
+  private getConfirmationType(params: ElicitationParams): string {
+    // Try to infer confirmation type from message content
+    const message = params.message.toLowerCase();
+    if (message.includes("confirm") || message.includes("確認")) {
+      return "confirmation";
+    } else if (message.includes("rate") || message.includes("評価")) {
+      return "rating";
+    } else if (message.includes("clarify") || message.includes("明確")) {
+      return "clarification";
+    } else if (message.includes("verify") || message.includes("検証")) {
+      return "verification";
+    } else if (message.includes("yes/no") || message.includes("はい/いいえ")) {
+      return "yes_no";
+    } else {
+      return "custom";
+    }
+  }
+
+  private determineTimeoutForAction(impact?: string): number {
+    if (!impact) return this.config.defaultTimeoutMs;
+    
+    const impactLower = impact.toLowerCase();
+    if (impactLower.includes("delete") || impactLower.includes("remove") || 
+        impactLower.includes("削除") || impactLower.includes("破壊")) {
+      return 120000; // 2 minutes for critical actions
+    } else if (impactLower.includes("warning")) {
+      return 90000; // 1.5 minutes for warning actions
+    }
+    
+    return this.config.defaultTimeoutMs;
   }
 
   private async handleConfirmAction(args: Record<string, unknown>) {
@@ -418,6 +534,7 @@ class ConfirmationMCPServer {
         },
         required: ["confirmed"],
       },
+      timeoutMs: this.determineTimeoutForAction(impact),
     };
 
     try {
@@ -640,6 +757,7 @@ class ConfirmationMCPServer {
         },
         required: ["answer"],
       },
+      timeoutMs: 30000, // Short timeout for simple yes/no questions
     };
 
     try {
@@ -695,6 +813,7 @@ class ConfirmationMCPServer {
         },
         required: ["rating"],
       },
+      timeoutMs: 20000, // Short timeout for ratings (reference only)
     };
 
     try {

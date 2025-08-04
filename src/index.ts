@@ -361,10 +361,10 @@ class ConfirmationMCPServer {
 
     let message = `Please confirm this action:\n\n**Action**: ${action}`;
     if (impact) {
-      message += `\n**Impact**: ${impact}`;
+      message += `\n\n**Impact**: ${impact}`;
     }
     if (details) {
-      message += `\n**Details**: ${details}`;
+      message += `\n\n**Details**: ${details}`;
     }
     message += `\n\nDo you want to proceed?`;
 

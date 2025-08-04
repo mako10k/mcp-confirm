@@ -4,7 +4,7 @@
 			"type": "stdio",
 			"command": "npx",
 			"args": [
-				"@mako10k/mcp-search@2.0.0"
+				"@mako10k/mcp-search@latest"
 			],
 			"env": {
 				"GOOGLE_API_KEY": "${input:google_api_key}",
@@ -13,15 +13,11 @@
 		},
 		"mcp-confirm": {
 			"type": "stdio",
-			"command": "node",
+			"command": "npx",
 			"args": [
-				"dist/index.js"
+				"@mako10k/mcp-confirm@latest"
 			],
-			"cwd": "${workspaceFolder}",
-			"dev": {
-				"watch": "dist/**/*.js",
-				"debug": { "type": "node" }
-			}
+			"env": {}
 		}
 	},
 	"inputs": [

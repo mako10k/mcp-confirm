@@ -2,16 +2,181 @@
 
 AI-ユーザー間の復唱確認プロトコルを実装するMCPサーバーです。LLMが不安になったときに、ユーザーに確認を取るためのツールを提供します。
 
-## 概要
+# @mako10k/mcp-confirm
 
-このMCPサーバーは、[Model Context Protocol Elicitation仕様](https://modelcontextprotocol.io/specification/draft/client/elicitation)を基に、AI（LLM）とユーザー間の確認・復唱プロトコルを実装しています。
+A Model Context Protocol (MCP) server for AI-user confirmation and clarification. This server provides tools for AI assistants (LLMs) to ask users for confirmation when they need clarification or verification.
 
-AIが以下のような状況で使用できます：
-- アクションを実行する前の確認
-- あいまいなリクエストの意図確認
-- 理解が正しいかの検証
-- はい/いいえの質問
-- ユーザー満足度の収集
+## Overview
+
+This MCP server implements the [Model Context Protocol Elicitation specification](https://modelcontextprotocol.io/specification/draft/client/elicitation) to enable confirmation and clarification protocols between AI assistants and users.
+
+AI assistants can use this in situations such as:
+- Confirming actions before execution
+- Clarifying ambiguous requests
+- Verifying understanding is correct
+- Asking yes/no questions
+- Collecting user satisfaction ratings
+
+## Features
+
+### Available Tools
+
+1. **ask_yes_no**
+   - Ask yes/no confirmation questions
+   - Used when AI needs clarification or verification
+
+2. **confirm_action**
+   - Confirm actions before execution
+   - Includes impact and details in confirmation dialog
+
+3. **clarify_intent**
+   - Clarify ambiguous requests
+   - Present multiple interpretation options
+
+4. **verify_understanding**
+   - Verify AI's understanding is correct
+   - Confirm next steps before proceeding
+
+5. **collect_rating**
+   - Collect user satisfaction ratings
+   - Evaluate AI response quality
+
+6. **elicit_custom**
+   - Custom confirmation dialogs
+   - Use custom JSON schemas
+
+## Installation
+
+```bash
+# Install globally
+npm install -g @mako10k/mcp-confirm
+
+# Or use with npx
+npx @mako10k/mcp-confirm
+```
+
+## Configuration
+
+### VS Code Integration
+
+Add to your `.vscode/mcp.json`:
+
+```json
+{
+  "servers": {
+    "mcp-confirm": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@mako10k/mcp-confirm"]
+    }
+  }
+}
+```
+
+### Claude Desktop Configuration
+
+Add to your Claude Desktop `config.json`:
+
+#### Windows
+Location: `%APPDATA%\Claude\config.json`
+
+#### macOS  
+Location: `~/Library/Application Support/Claude/config.json`
+
+#### Linux
+Location: `~/.config/claude/config.json`
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "mcp-confirm": {
+        "command": "npx",
+        "args": ["@mako10k/mcp-confirm"]
+      }
+    }
+  }
+}
+```
+
+## Usage Examples
+
+### Basic Confirmation
+```javascript
+// Before AI executes an action
+await confirm_action({
+  action: "Delete files",
+  impact: "Cannot be restored",
+  details: "10 files will be deleted"
+});
+```
+
+### Intent Clarification
+```javascript
+// When request is ambiguous
+await clarify_intent({
+  request_summary: "Want to create a project",
+  ambiguity: "Type of project unclear",
+  options: ["Node.js project", "Python project", "React app"]
+});
+```
+
+### Understanding Verification
+```javascript
+// Before complex tasks
+await verify_understanding({
+  understanding: "Create web application with user authentication",
+  key_points: ["React + Node.js", "JWT authentication", "PostgreSQL database"],
+  next_steps: "Create project structure then implement auth system"
+});
+```
+
+## Technical Specifications
+
+- **Protocol**: Model Context Protocol Elicitation
+- **Language**: TypeScript
+- **Runtime**: Node.js
+- **SDK Version**: @modelcontextprotocol/sdk ^1.0.0
+
+## How It Works
+
+This server implements true MCP Elicitation protocol:
+
+1. Sends `elicitation/create` method to client
+2. Defines user input structure with JSON Schema
+3. User responds with `accept`, `decline`, or `cancel`
+4. On `accept`, receives structured data following schema
+
+This enables reliable communication between AI and users.
+
+## Development
+
+```bash
+# Clone repository
+git clone https://github.com/mako10k/mcp-confirm.git
+cd mcp-confirm
+
+# Install dependencies
+npm install
+
+# Build
+npm run build
+
+# Run locally
+npm start
+
+# Quality checks
+npm run quality
+```
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Repository
+
+- **GitHub**: https://github.com/mako10k/mcp-confirm
+- **npm**: https://www.npmjs.com/package/@mako10k/mcp-confirm
 
 ## 機能
 

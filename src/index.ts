@@ -30,7 +30,10 @@ interface ConfirmationLogEntry {
   timestamp: string;
   confirmationType: string;
   request: ElicitationParams;
-  response: { action: "accept" | "decline" | "cancel"; content?: Record<string, unknown> };
+  response: {
+    action: "accept" | "decline" | "cancel";
+    content?: Record<string, unknown>;
+  };
   responseTimeMs: number;
   success: boolean;
   error?: string;
@@ -39,6 +42,27 @@ interface ConfirmationLogEntry {
 interface ServerConfig {
   confirmationHistoryPath: string;
   defaultTimeoutMs: number;
+}
+
+interface LogSearchParams {
+  keyword?: string;
+  confirmationType?: string;
+  startDate?: string;
+  endDate?: string;
+  success?: boolean;
+  timedOut?: boolean;
+  minResponseTime?: number;
+  maxResponseTime?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+interface LogSearchResult {
+  entries: ConfirmationLogEntry[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
 }
 
 class ConfirmationMCPServer {
@@ -53,7 +77,7 @@ class ConfirmationMCPServer {
     this.server = new Server(
       {
         name: "mcp-confirm",
-        version: "1.0.0",
+        version: "1.2.0",
       },
       {
         capabilities: {
@@ -84,8 +108,14 @@ class ConfirmationMCPServer {
     // TODO: Load from config file if exists
     // For now, use environment variables or defaults
     return {
-      confirmationHistoryPath: process.env.MCP_CONFIRM_LOG_PATH || defaultConfig.confirmationHistoryPath,
-      defaultTimeoutMs: parseInt(process.env.MCP_CONFIRM_TIMEOUT_MS || String(defaultConfig.defaultTimeoutMs), 10),
+      confirmationHistoryPath:
+        process.env.MCP_CONFIRM_LOG_PATH ||
+        defaultConfig.confirmationHistoryPath,
+      defaultTimeoutMs: parseInt(
+        process.env.MCP_CONFIRM_TIMEOUT_MS ||
+          String(defaultConfig.defaultTimeoutMs),
+        10
+      ),
     };
   }
 
@@ -102,7 +132,11 @@ class ConfirmationMCPServer {
     try {
       await this.ensureLogDirectory();
       const logLine = JSON.stringify(entry) + "\n";
-      await fs.promises.appendFile(this.config.confirmationHistoryPath, logLine, "utf8");
+      await fs.promises.appendFile(
+        this.config.confirmationHistoryPath,
+        logLine,
+        "utf8"
+      );
     } catch (error) {
       this.log("Failed to write confirmation log:", error);
     }
@@ -170,6 +204,8 @@ class ConfirmationMCPServer {
       this.createVerifyUnderstandingTool(),
       this.createCollectRatingTool(),
       this.createElicitCustomTool(),
+      this.createSearchLogsTool(),
+      this.createAnalyzeLogsTool(),
     ];
   }
 
@@ -227,7 +263,8 @@ class ConfirmationMCPServer {
         properties: {
           request_summary: {
             type: "string",
-            description: "Summary of what the AI understood from the user's request",
+            description:
+              "Summary of what the AI understood from the user's request",
           },
           ambiguity: {
             type: "string",
@@ -238,7 +275,8 @@ class ConfirmationMCPServer {
             items: {
               type: "string",
             },
-            description: "Possible interpretations or options for the user to choose from",
+            description:
+              "Possible interpretations or options for the user to choose from",
           },
         },
         required: ["request_summary", "ambiguity"],
@@ -267,7 +305,8 @@ class ConfirmationMCPServer {
           },
           next_steps: {
             type: "string",
-            description: "What the AI plans to do next if understanding is correct",
+            description:
+              "What the AI plans to do next if understanding is correct",
           },
         },
         required: ["understanding"],
@@ -285,7 +324,8 @@ class ConfirmationMCPServer {
         properties: {
           subject: {
             type: "string",
-            description: "What to rate (e.g., 'this response', 'my help with your task')",
+            description:
+              "What to rate (e.g., 'this response', 'my help with your task')",
           },
           description: {
             type: "string",
@@ -311,10 +351,108 @@ class ConfirmationMCPServer {
           },
           schema: {
             type: "object",
-            description: "JSON schema defining the structure of information to collect",
+            description:
+              "JSON schema defining the structure of information to collect",
           },
         },
         required: ["message", "schema"],
+      },
+    };
+  }
+
+  private createSearchLogsTool(): Tool {
+    return {
+      name: "search_logs",
+      description:
+        "Search confirmation history logs with various filters and pagination",
+      inputSchema: {
+        type: "object",
+        properties: {
+          keyword: {
+            type: "string",
+            description: "Search keyword in message content",
+          },
+          confirmationType: {
+            type: "string",
+            description:
+              "Filter by confirmation type (confirmation, rating, clarification, verification, yes_no, custom)",
+            enum: [
+              "confirmation",
+              "rating",
+              "clarification",
+              "verification",
+              "yes_no",
+              "custom",
+            ],
+          },
+          startDate: {
+            type: "string",
+            description: "Start date filter (ISO 8601 format)",
+            format: "date-time",
+          },
+          endDate: {
+            type: "string",
+            description: "End date filter (ISO 8601 format)",
+            format: "date-time",
+          },
+          success: {
+            type: "boolean",
+            description: "Filter by success status",
+          },
+          timedOut: {
+            type: "boolean",
+            description: "Filter by timeout status",
+          },
+          minResponseTime: {
+            type: "number",
+            description: "Minimum response time in milliseconds",
+          },
+          maxResponseTime: {
+            type: "number",
+            description: "Maximum response time in milliseconds",
+          },
+          page: {
+            type: "number",
+            description: "Page number for pagination (1-based)",
+            minimum: 1,
+            default: 1,
+          },
+          pageSize: {
+            type: "number",
+            description: "Number of entries per page",
+            minimum: 1,
+            maximum: 100,
+            default: 10,
+          },
+        },
+      },
+    };
+  }
+
+  private createAnalyzeLogsTool(): Tool {
+    return {
+      name: "analyze_logs",
+      description: "Perform statistical analysis on confirmation history logs",
+      inputSchema: {
+        type: "object",
+        properties: {
+          startDate: {
+            type: "string",
+            description: "Start date for analysis (ISO 8601 format)",
+            format: "date-time",
+          },
+          endDate: {
+            type: "string",
+            description: "End date for analysis (ISO 8601 format)",
+            format: "date-time",
+          },
+          groupBy: {
+            type: "string",
+            description: "Group analysis by field",
+            enum: ["confirmationType", "success", "hour", "day"],
+            default: "confirmationType",
+          },
+        },
       },
     };
   }
@@ -327,22 +465,7 @@ class ConfirmationMCPServer {
         const { name, arguments: args } = request.params;
 
         try {
-          switch (name) {
-            case "ask_yes_no":
-              return await this.handleAskYesNo(args || {});
-            case "confirm_action":
-              return await this.handleConfirmAction(args || {});
-            case "clarify_intent":
-              return await this.handleClarifyIntent(args || {});
-            case "verify_understanding":
-              return await this.handleVerifyUnderstanding(args || {});
-            case "collect_rating":
-              return await this.handleCollectRating(args || {});
-            case "elicit_custom":
-              return await this.handleElicitCustom(args || {});
-            default:
-              throw new Error(`Unknown tool: ${name}`);
-          }
+          return await this.executeToolCall(name, args || {});
         } catch (error) {
           return {
             content: [
@@ -358,7 +481,32 @@ class ConfirmationMCPServer {
     );
   }
 
-  private generateMockContent(schema: ElicitationSchema): Record<string, unknown> {
+  private async executeToolCall(name: string, args: Record<string, unknown>) {
+    switch (name) {
+      case "ask_yes_no":
+        return await this.handleAskYesNo(args);
+      case "confirm_action":
+        return await this.handleConfirmAction(args);
+      case "clarify_intent":
+        return await this.handleClarifyIntent(args);
+      case "verify_understanding":
+        return await this.handleVerifyUnderstanding(args);
+      case "collect_rating":
+        return await this.handleCollectRating(args);
+      case "elicit_custom":
+        return await this.handleElicitCustom(args);
+      case "search_logs":
+        return await this.handleSearchLogs(args);
+      case "analyze_logs":
+        return await this.handleAnalyzeLogs(args);
+      default:
+        throw new Error(`Unknown tool: ${name}`);
+    }
+  }
+
+  private generateMockContent(
+    schema: ElicitationSchema
+  ): Record<string, unknown> {
     const content: Record<string, unknown> = {};
 
     for (const [key, propSchema] of Object.entries(schema.properties)) {
@@ -373,12 +521,13 @@ class ConfirmationMCPServer {
           } else if (prop.format === "date") {
             content[key] = "2025-08-04";
           } else {
-            content[key] = `Mock ${typeof prop.title === "string" ? prop.title : key}`;
+            content[key] =
+              `Mock ${typeof prop.title === "string" ? prop.title : key}`;
           }
           break;
         case "number":
         case "integer":
-          content[key] = (typeof prop.minimum === "number" ? prop.minimum : 1);
+          content[key] = typeof prop.minimum === "number" ? prop.minimum : 1;
           break;
         case "boolean":
           content[key] = prop.default !== undefined ? prop.default : true;
@@ -414,17 +563,18 @@ class ConfirmationMCPServer {
     };
   }
 
-  private async sendElicitationRequest(
-    params: ElicitationParams
-  ): Promise<{ action: "accept" | "decline" | "cancel"; content?: Record<string, unknown> }> {
+  private async sendElicitationRequest(params: ElicitationParams): Promise<{
+    action: "accept" | "decline" | "cancel";
+    content?: Record<string, unknown>;
+  }> {
     this.log("Sending elicitation request to client", params);
 
     const startTime = Date.now();
     const timeoutMs = params.timeoutMs || this.config.defaultTimeoutMs;
-    
+
     try {
       // Use the server's request method to send elicitation to client
-      const response = await this.server.request(
+      const response = (await this.server.request(
         {
           method: "elicitation/create",
           params: params,
@@ -433,7 +583,10 @@ class ConfirmationMCPServer {
         {
           timeout: timeoutMs,
         }
-      ) as { action: "accept" | "decline" | "cancel"; content?: Record<string, unknown> };
+      )) as {
+        action: "accept" | "decline" | "cancel";
+        content?: Record<string, unknown>;
+      };
 
       const responseTimeMs = Date.now() - startTime;
       this.log("Elicitation response received:", response);
@@ -490,20 +643,25 @@ class ConfirmationMCPServer {
 
   private determineTimeoutForAction(impact?: string): number {
     if (!impact) return this.config.defaultTimeoutMs;
-    
+
     const impactLower = impact.toLowerCase();
-    if (impactLower.includes("delete") || impactLower.includes("remove") || 
-        impactLower.includes("削除") || impactLower.includes("破壊")) {
+    if (
+      impactLower.includes("delete") ||
+      impactLower.includes("remove") ||
+      impactLower.includes("削除") ||
+      impactLower.includes("破壊")
+    ) {
       return 120000; // 2 minutes for critical actions
     } else if (impactLower.includes("warning")) {
       return 90000; // 1.5 minutes for warning actions
     }
-    
+
     return this.config.defaultTimeoutMs;
   }
 
   private async handleConfirmAction(args: Record<string, unknown>) {
-    const action = typeof args.action === "string" ? args.action : "Unknown action";
+    const action =
+      typeof args.action === "string" ? args.action : "Unknown action";
     const impact = typeof args.impact === "string" ? args.impact : undefined;
     const details = typeof args.details === "string" ? args.details : undefined;
 
@@ -569,8 +727,12 @@ class ConfirmationMCPServer {
   }
 
   private async handleClarifyIntent(args: Record<string, unknown>) {
-    const request_summary = typeof args.request_summary === "string" ? args.request_summary : "Unknown request";
-    const ambiguity = typeof args.ambiguity === "string" ? args.ambiguity : "Unknown ambiguity";
+    const request_summary =
+      typeof args.request_summary === "string"
+        ? args.request_summary
+        : "Unknown request";
+    const ambiguity =
+      typeof args.ambiguity === "string" ? args.ambiguity : "Unknown ambiguity";
     const options = Array.isArray(args.options) ? args.options : undefined;
 
     let message = `I need to clarify your intent:\n\n**My understanding**: ${request_summary}\n\n**What's unclear**: ${ambiguity}`;
@@ -593,7 +755,7 @@ class ConfirmationMCPServer {
         type: "string",
         title: "Select Option",
         description: "Which option best matches your intent?",
-        enum: options.map(opt => String(opt)),
+        enum: options.map((opt) => String(opt)),
       };
     }
 
@@ -632,9 +794,15 @@ class ConfirmationMCPServer {
   }
 
   private async handleVerifyUnderstanding(args: Record<string, unknown>) {
-    const understanding = typeof args.understanding === "string" ? args.understanding : "Unknown understanding";
-    const key_points = Array.isArray(args.key_points) ? args.key_points : undefined;
-    const next_steps = typeof args.next_steps === "string" ? args.next_steps : undefined;
+    const understanding =
+      typeof args.understanding === "string"
+        ? args.understanding
+        : "Unknown understanding";
+    const key_points = Array.isArray(args.key_points)
+      ? args.key_points
+      : undefined;
+    const next_steps =
+      typeof args.next_steps === "string" ? args.next_steps : undefined;
 
     let message = `Please verify my understanding:\n\n**What I understood**: ${understanding}`;
 
@@ -701,11 +869,15 @@ class ConfirmationMCPServer {
   }
 
   private async handleElicitCustom(args: Record<string, unknown>) {
-    const message = typeof args.message === "string" ? args.message : "Please provide input";
-    const schema = typeof args.schema === "object" && args.schema !== null ? args.schema as ElicitationSchema : {
-      type: "object" as const,
-      properties: {},
-    };
+    const message =
+      typeof args.message === "string" ? args.message : "Please provide input";
+    const schema =
+      typeof args.schema === "object" && args.schema !== null
+        ? (args.schema as ElicitationSchema)
+        : {
+            type: "object" as const,
+            properties: {},
+          };
 
     const elicitationParams: ElicitationParams = {
       message,
@@ -742,7 +914,10 @@ class ConfirmationMCPServer {
   }
 
   private async handleAskYesNo(args: Record<string, unknown>) {
-    const question = typeof args.question === "string" ? args.question : "Please answer yes or no";
+    const question =
+      typeof args.question === "string"
+        ? args.question
+        : "Please answer yes or no";
 
     const elicitationParams: ElicitationParams = {
       message: question,
@@ -790,8 +965,10 @@ class ConfirmationMCPServer {
   }
 
   private async handleCollectRating(args: Record<string, unknown>) {
-    const subject = typeof args.subject === "string" ? args.subject : "this item";
-    const description = typeof args.description === "string" ? args.description : undefined;
+    const subject =
+      typeof args.subject === "string" ? args.subject : "this item";
+    const description =
+      typeof args.description === "string" ? args.description : undefined;
 
     const elicitationParams: ElicitationParams = {
       message: `Please rate ${subject}`,
@@ -845,6 +1022,366 @@ class ConfirmationMCPServer {
         `Rating collection failed: ${error instanceof Error ? error.message : String(error)}`
       );
     }
+  }
+
+  private async readLogEntries(): Promise<ConfirmationLogEntry[]> {
+    try {
+      const logContent = await fs.promises.readFile(
+        this.config.confirmationHistoryPath,
+        "utf8"
+      );
+      const lines = logContent
+        .trim()
+        .split("\n")
+        .filter((line) => line.trim());
+      return lines.map((line) => JSON.parse(line) as ConfirmationLogEntry);
+    } catch (error) {
+      if ((error as { code?: string }).code === "ENOENT") {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  private filterLogEntries(
+    entries: ConfirmationLogEntry[],
+    params: LogSearchParams
+  ): ConfirmationLogEntry[] {
+    return entries.filter((entry) => {
+      return (
+        this.matchesKeyword(entry, params.keyword) &&
+        this.matchesType(entry, params.confirmationType) &&
+        this.matchesDateRange(entry, params.startDate, params.endDate) &&
+        this.matchesSuccess(entry, params.success) &&
+        this.matchesTimeout(entry, params.timedOut) &&
+        this.matchesResponseTime(
+          entry,
+          params.minResponseTime,
+          params.maxResponseTime
+        )
+      );
+    });
+  }
+
+  private matchesKeyword(
+    entry: ConfirmationLogEntry,
+    keyword?: string
+  ): boolean {
+    if (!keyword) return true;
+    const searchText = (
+      entry.request.message +
+      " " +
+      JSON.stringify(entry.response)
+    ).toLowerCase();
+    return searchText.includes(keyword.toLowerCase());
+  }
+
+  private matchesType(entry: ConfirmationLogEntry, type?: string): boolean {
+    return !type || entry.confirmationType === type;
+  }
+
+  private matchesDateRange(
+    entry: ConfirmationLogEntry,
+    startDate?: string,
+    endDate?: string
+  ): boolean {
+    const entryDate = new Date(entry.timestamp);
+    if (startDate && entryDate < new Date(startDate)) return false;
+    if (endDate && entryDate > new Date(endDate)) return false;
+    return true;
+  }
+
+  private matchesSuccess(
+    entry: ConfirmationLogEntry,
+    success?: boolean
+  ): boolean {
+    return success === undefined || entry.success === success;
+  }
+
+  private matchesTimeout(
+    entry: ConfirmationLogEntry,
+    timedOut?: boolean
+  ): boolean {
+    if (timedOut === undefined) return true;
+    const isTimedOut = entry.error?.includes("timed out") || false;
+    return isTimedOut === timedOut;
+  }
+
+  private matchesResponseTime(
+    entry: ConfirmationLogEntry,
+    minTime?: number,
+    maxTime?: number
+  ): boolean {
+    if (minTime !== undefined && entry.responseTimeMs < minTime) return false;
+    if (maxTime !== undefined && entry.responseTimeMs > maxTime) return false;
+    return true;
+  }
+
+  private async searchLogs(params: LogSearchParams): Promise<LogSearchResult> {
+    const entries = await this.readLogEntries();
+
+    // Apply filters
+    const filteredEntries = this.filterLogEntries(entries, params);
+
+    // Sort by timestamp (newest first)
+    filteredEntries.sort(
+      (a, b) =>
+        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
+
+    // Pagination
+    const page = params.page || 1;
+    const pageSize = params.pageSize || 10;
+    const totalCount = filteredEntries.length;
+    const totalPages = Math.ceil(totalCount / pageSize);
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const paginatedEntries = filteredEntries.slice(startIndex, endIndex);
+
+    return {
+      entries: paginatedEntries,
+      totalCount,
+      currentPage: page,
+      totalPages,
+      pageSize,
+    };
+  }
+
+  private async handleSearchLogs(args: Record<string, unknown>) {
+    try {
+      const searchParams: LogSearchParams = {
+        keyword: typeof args.keyword === "string" ? args.keyword : undefined,
+        confirmationType:
+          typeof args.confirmationType === "string"
+            ? args.confirmationType
+            : undefined,
+        startDate:
+          typeof args.startDate === "string" ? args.startDate : undefined,
+        endDate: typeof args.endDate === "string" ? args.endDate : undefined,
+        success: typeof args.success === "boolean" ? args.success : undefined,
+        timedOut:
+          typeof args.timedOut === "boolean" ? args.timedOut : undefined,
+        minResponseTime:
+          typeof args.minResponseTime === "number"
+            ? args.minResponseTime
+            : undefined,
+        maxResponseTime:
+          typeof args.maxResponseTime === "number"
+            ? args.maxResponseTime
+            : undefined,
+        page: typeof args.page === "number" ? args.page : 1,
+        pageSize:
+          typeof args.pageSize === "number" ? Math.min(args.pageSize, 100) : 10,
+      };
+
+      const result = await this.searchLogs(searchParams);
+
+      const formatEntry = (entry: ConfirmationLogEntry, index: number) => {
+        const timestamp = new Date(entry.timestamp).toLocaleString();
+        const responseTime = `${entry.responseTimeMs}ms`;
+        const status = entry.success ? "✅ Success" : "❌ Failed";
+        const action = entry.response.action;
+
+        return `**${index + 1}.** ${timestamp} [${entry.confirmationType}]
+${status} - ${action} (${responseTime})
+Message: ${entry.request.message.substring(0, 100)}${entry.request.message.length > 100 ? "..." : ""}
+${entry.error ? `Error: ${entry.error}` : ""}`;
+      };
+
+      const entriesText = result.entries
+        .map((entry, index) =>
+          formatEntry(entry, (result.currentPage - 1) * result.pageSize + index)
+        )
+        .join("\n\n");
+
+      const paginationInfo = `\n\n📊 **Search Results**
+Total: ${result.totalCount} entries
+Page: ${result.currentPage}/${result.totalPages}
+Showing: ${result.entries.length} entries`;
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: `🔍 **Confirmation Log Search Results**\n\n${entriesText}${paginationInfo}`,
+          },
+        ],
+      };
+    } catch (error) {
+      return this.createErrorResponse(
+        `Log search failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  private async handleAnalyzeLogs(args: Record<string, unknown>) {
+    try {
+      const startDate =
+        typeof args.startDate === "string" ? args.startDate : undefined;
+      const endDate =
+        typeof args.endDate === "string" ? args.endDate : undefined;
+      const groupBy =
+        typeof args.groupBy === "string" ? args.groupBy : "confirmationType";
+
+      const entries = await this.readLogEntries();
+      const filteredEntries = this.filterByDateRange(
+        entries,
+        startDate,
+        endDate
+      );
+
+      const stats = this.calculateBasicStats(filteredEntries);
+      const groupedData = this.groupLogsByField(filteredEntries, groupBy);
+      const groupAnalysis = this.formatGroupAnalysis(groupedData);
+
+      const analysisText = this.formatAnalysisResult(
+        stats,
+        groupAnalysis,
+        groupBy,
+        startDate,
+        endDate
+      );
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: analysisText,
+          },
+        ],
+      };
+    } catch (error) {
+      return this.createErrorResponse(
+        `Log analysis failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  private filterByDateRange(
+    entries: ConfirmationLogEntry[],
+    startDate?: string,
+    endDate?: string
+  ): ConfirmationLogEntry[] {
+    let filtered = entries;
+    if (startDate) {
+      filtered = filtered.filter(
+        (entry) => new Date(entry.timestamp) >= new Date(startDate)
+      );
+    }
+    if (endDate) {
+      filtered = filtered.filter(
+        (entry) => new Date(entry.timestamp) <= new Date(endDate)
+      );
+    }
+    return filtered;
+  }
+
+  private calculateBasicStats(entries: ConfirmationLogEntry[]) {
+    const totalEntries = entries.length;
+    const successfulEntries = entries.filter((e) => e.success).length;
+    const failedEntries = totalEntries - successfulEntries;
+    const timedOutEntries = entries.filter((e) =>
+      e.error?.includes("timed out")
+    ).length;
+
+    const avgResponseTime =
+      totalEntries > 0
+        ? entries.reduce((sum, e) => sum + e.responseTimeMs, 0) / totalEntries
+        : 0;
+
+    const maxResponseTime =
+      totalEntries > 0 ? Math.max(...entries.map((e) => e.responseTimeMs)) : 0;
+
+    const minResponseTime =
+      totalEntries > 0 ? Math.min(...entries.map((e) => e.responseTimeMs)) : 0;
+
+    return {
+      totalEntries,
+      successfulEntries,
+      failedEntries,
+      timedOutEntries,
+      avgResponseTime,
+      maxResponseTime,
+      minResponseTime,
+    };
+  }
+
+  private formatGroupAnalysis(
+    groupedData: Record<string, ConfirmationLogEntry[]>
+  ): string {
+    return Object.entries(groupedData)
+      .map(([key, entries]) => {
+        const count = entries.length;
+        const successRate =
+          (entries.filter((e) => e.success).length / count) * 100;
+        const avgTime =
+          entries.reduce((sum, e) => sum + e.responseTimeMs, 0) / count;
+        return `**${key}**: ${count} entries (${successRate.toFixed(1)}% success, avg: ${avgTime.toFixed(0)}ms)`;
+      })
+      .join("\n");
+  }
+
+  private formatAnalysisResult(
+    stats: ReturnType<typeof this.calculateBasicStats>,
+    groupAnalysis: string,
+    groupBy: string,
+    startDate?: string,
+    endDate?: string
+  ): string {
+    return `📊 **Confirmation Log Analysis**
+
+**Period**: ${startDate || "All time"} to ${endDate || "Present"}
+
+**Overall Statistics**:
+- Total confirmations: ${stats.totalEntries}
+- Successful: ${stats.successfulEntries} (${stats.totalEntries > 0 ? ((stats.successfulEntries / stats.totalEntries) * 100).toFixed(1) : 0}%)
+- Failed: ${stats.failedEntries} (${stats.totalEntries > 0 ? ((stats.failedEntries / stats.totalEntries) * 100).toFixed(1) : 0}%)
+- Timed out: ${stats.timedOutEntries} (${stats.totalEntries > 0 ? ((stats.timedOutEntries / stats.totalEntries) * 100).toFixed(1) : 0}%)
+
+**Response Times**:
+- Average: ${stats.avgResponseTime.toFixed(0)}ms
+- Minimum: ${stats.minResponseTime}ms
+- Maximum: ${stats.maxResponseTime}ms
+
+**Breakdown by ${groupBy}**:
+${groupAnalysis}`;
+  }
+
+  private groupLogsByField(
+    entries: ConfirmationLogEntry[],
+    field: string
+  ): Record<string, ConfirmationLogEntry[]> {
+    const groups: Record<string, ConfirmationLogEntry[]> = {};
+
+    entries.forEach((entry) => {
+      let key: string;
+
+      switch (field) {
+        case "confirmationType":
+          key = entry.confirmationType;
+          break;
+        case "success":
+          key = entry.success ? "Success" : "Failed";
+          break;
+        case "hour":
+          key =
+            new Date(entry.timestamp).getHours().toString().padStart(2, "0") +
+            ":00";
+          break;
+        case "day":
+          key = new Date(entry.timestamp).toISOString().split("T")[0];
+          break;
+        default:
+          key = "Unknown";
+      }
+
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(entry);
+    });
+
+    return groups;
   }
 
   async run() {

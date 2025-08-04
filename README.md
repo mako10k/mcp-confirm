@@ -45,6 +45,16 @@ AI assistants can use this in situations such as:
    - Custom confirmation dialogs
    - Use custom JSON schemas
 
+7. **search_logs**
+   - Search confirmation history logs
+   - Filter by type, success status, date range, response time
+   - Paginated results for large datasets
+
+8. **analyze_logs**
+   - Statistical analysis of confirmation history
+   - Success rates, response times, trends
+   - Grouping by type, time period, etc.
+
 ## Installation
 
 ```bash

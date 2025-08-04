@@ -1,0 +1,24 @@
+# Source files
+src/
+tsconfig.json
+eslint.config.js
+.prettierrc.json
+.jscpd.json
+
+# Development files
+.vscode/
+test/
+reports/
+*.log
+
+# Git files
+.git/
+.gitignore
+
+# Dependencies
+node_modules/
+
+# Old files
+README_old.md
+test-server.js
+tsconfig.tsbuildinfo

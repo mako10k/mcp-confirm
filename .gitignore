@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# Development files
+*.log
+npm-debug.log*
+.npm
+
+# VS Code
+.vscode/settings.json
+
+# Analysis reports
+reports/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Old files
+README_old.md
+test-server.js

@@ -1,0 +1,11 @@
+{
+  "threshold": 1,
+  "reporters": ["console", "json"],
+  "absolute": true,
+  "gitignore": true,
+  "ignore": ["**/node_modules/**", "**/dist/**", "**/.git/**"],
+  "format": ["typescript", "javascript"],
+  "min-lines": 5,
+  "min-tokens": 50,
+  "output": "./reports"
+}

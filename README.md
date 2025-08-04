@@ -1,4 +1,4 @@
-# MCP Confirm
+# @mako10k/mcp-confirm
 
 AI-ユーザー間の復唱確認プロトコルを実装するMCPサーバーです。LLMが不安になったときに、ユーザーに確認を取るためのツールを提供します。
 
@@ -50,8 +50,12 @@ npm install
 # ビルド
 npm run build
 
-# 実行
-npm start
+# 実行（グローバルインストール後）
+npm install -g @mako10k/mcp-confirm
+mcp-confirm
+
+# または npx で直接実行
+npx @mako10k/mcp-confirm
 ```
 
 ## VS Code統合
@@ -63,9 +67,8 @@ npm start
   "servers": {
     "mcp-confirm": {
       "type": "stdio",
-      "command": "node",
-      "args": ["dist/index.js"],
-      "cwd": "${workspaceFolder}"
+      "command": "npx",
+      "args": ["@mako10k/mcp-confirm"]
     }
   }
 }

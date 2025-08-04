@@ -10,7 +10,7 @@ Add to your `.vscode/mcp.json`:
     "mcp-confirm": {
       "type": "stdio",
       "command": "npx",
-      "args": ["mcp-confirm"]
+      "args": ["@mako10k/mcp-confirm"]
     }
   }
 }
@@ -35,7 +35,7 @@ Location: `~/.config/claude/config.json`
     "servers": {
       "mcp-confirm": {
         "command": "npx",
-        "args": ["mcp-confirm"]
+        "args": ["@mako10k/mcp-confirm"]
       }
     }
   }
@@ -47,7 +47,7 @@ Location: `~/.config/claude/config.json`
 If you prefer to install locally instead of using npx:
 
 ```bash
-npm install -g mcp-confirm
+npm install -g @mako10k/mcp-confirm
 ```
 
 Then use:
@@ -57,7 +57,7 @@ Then use:
   "mcp": {
     "servers": {
       "mcp-confirm": {
-        "command": "mcp-confirm"
+        "command": "@mako10k/mcp-confirm"
       }
     }
   }

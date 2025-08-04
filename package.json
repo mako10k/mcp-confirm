@@ -1,8 +1,11 @@
 {
-  "name": "mcp-confirm",
+  "name": "@mako10k/mcp-confirm",
   "version": "1.0.0",
   "description": "MCP server for AI-user confirmation and clarification protocol",
   "main": "dist/index.js",
+  "bin": {
+    "mcp-confirm": "dist/index.js"
+  },
   "type": "module",
   "scripts": {
     "build": "tsc",

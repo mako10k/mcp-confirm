@@ -1,6 +1,6 @@
 {
   "name": "@mako10k/mcp-confirm",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "MCP server for AI-user confirmation and clarification protocol",
   "main": "dist/index.js",
   "bin": {

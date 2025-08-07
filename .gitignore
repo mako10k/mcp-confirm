@@ -29,3 +29,6 @@ Thumbs.db
 # Old files
 README_old.md
 test-server.js
+
+# Codespaces
+.devcontainer/.env

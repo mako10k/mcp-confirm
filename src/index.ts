@@ -102,7 +102,7 @@ class ConfirmationMCPServer {
   private loadConfig(): ServerConfig {
     const defaultConfig: ServerConfig = {
       confirmationHistoryPath: ".mcp-data/confirmation_history.log",
-      defaultTimeoutMs: 60000, // 60 seconds
+      defaultTimeoutMs: 180000, // 3 minutes
     };
 
     // TODO: Load from config file if exists

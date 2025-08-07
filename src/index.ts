@@ -197,17 +197,13 @@ class ConfirmationMCPServer {
       const { message, requestedSchema } = request.params;
 
       // Simulate different user actions based on the message content
-      if (
-        message.toLowerCase().includes("cancel")
-      ) {
+      if (message.toLowerCase().includes("cancel")) {
         return {
           action: "cancel" as const,
         };
       }
 
-      if (
-        message.toLowerCase().includes("decline")
-      ) {
+      if (message.toLowerCase().includes("decline")) {
         return {
           action: "decline" as const,
         };
@@ -681,10 +677,7 @@ class ConfirmationMCPServer {
     if (!impact) return this.config.defaultTimeoutMs;
 
     const impactLower = impact.toLowerCase();
-    if (
-      impactLower.includes("delete") ||
-      impactLower.includes("remove")
-    ) {
+    if (impactLower.includes("delete") || impactLower.includes("remove")) {
       return 120000; // 2 minutes for critical actions
     } else if (impactLower.includes("warning")) {
       return 90000; // 1.5 minutes for warning actions

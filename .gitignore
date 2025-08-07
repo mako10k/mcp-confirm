@@ -14,6 +14,10 @@ npm-debug.log*
 
 # Analysis reports
 reports/
+complexity-report/
+complexity-report-js/
+complexity-eslint.json
+complexity-report.md
 
 # TypeScript build info
 tsconfig.tsbuildinfo

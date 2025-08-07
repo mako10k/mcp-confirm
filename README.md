@@ -88,8 +88,24 @@ npx @mako10k/mcp-confirm
 You can configure the server using environment variables:
 
 - `MCP_CONFIRM_LOG_PATH`: Path to confirmation history log file (default: `.mcp-data/confirmation_history.log`)
-- `MCP_CONFIRM_TIMEOUT_MS`: Default timeout for confirmations in milliseconds (default: `60000`)
+- `MCP_CONFIRM_TIMEOUT_MS`: Default timeout for confirmations in milliseconds (default: `180000` = 3 minutes)
+  - Minimum: `5000` (5 seconds)
+  - Maximum: `1800000` (30 minutes)
+  - Invalid values will fall back to default with warning
 - `NODE_ENV`: Set to `development` to enable debug logging
+
+### Timeout Configuration Examples
+
+```bash
+# Use 5-minute timeout
+export MCP_CONFIRM_TIMEOUT_MS=300000
+
+# Use 1-minute timeout  
+export MCP_CONFIRM_TIMEOUT_MS=60000
+
+# Use 10-second timeout (minimum enforced)
+export MCP_CONFIRM_TIMEOUT_MS=10000
+```
 
 ### Timeout Behavior
 

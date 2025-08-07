@@ -88,6 +88,10 @@ class ConfirmationMCPServer {
 
     this.setupHandlers();
     this.log("ConfirmationMCPServer initialized");
+    this.log(`Configuration loaded:
+      - Log path: ${this.config.confirmationHistoryPath}
+      - Default timeout: ${this.config.defaultTimeoutMs}ms (${this.config.defaultTimeoutMs / 1000}s)
+      - Debug mode: ${this.isDebug}`);
   }
 
   private log(message: string, ...args: unknown[]) {
@@ -102,20 +106,48 @@ class ConfirmationMCPServer {
   private loadConfig(): ServerConfig {
     const defaultConfig: ServerConfig = {
       confirmationHistoryPath: ".mcp-data/confirmation_history.log",
-      defaultTimeoutMs: 180000, // 3 minutes
+      defaultTimeoutMs: 180000, // 3 minutes (default)
     };
 
-    // TODO: Load from config file if exists
-    // For now, use environment variables or defaults
+    // Parse timeout from environment variable with validation
+    let defaultTimeoutMs = defaultConfig.defaultTimeoutMs;
+    const timeoutEnv = process.env.MCP_CONFIRM_TIMEOUT_MS;
+
+    if (timeoutEnv) {
+      const parsedTimeout = parseInt(timeoutEnv, 10);
+      if (!isNaN(parsedTimeout) && parsedTimeout > 0) {
+        // Validate timeout range (minimum 5 seconds, maximum 30 minutes)
+        const minTimeout = 5000; // 5 seconds
+        const maxTimeout = 1800000; // 30 minutes
+
+        if (parsedTimeout < minTimeout) {
+          this.log(
+            `Warning: Timeout ${parsedTimeout}ms is too small, using minimum ${minTimeout}ms`
+          );
+          defaultTimeoutMs = minTimeout;
+        } else if (parsedTimeout > maxTimeout) {
+          this.log(
+            `Warning: Timeout ${parsedTimeout}ms is too large, using maximum ${maxTimeout}ms`
+          );
+          defaultTimeoutMs = maxTimeout;
+        } else {
+          defaultTimeoutMs = parsedTimeout;
+          this.log(
+            `Using timeout from environment: ${defaultTimeoutMs}ms (${defaultTimeoutMs / 1000}s)`
+          );
+        }
+      } else {
+        this.log(
+          `Warning: Invalid timeout value "${timeoutEnv}", using default ${defaultConfig.defaultTimeoutMs}ms`
+        );
+      }
+    }
+
     return {
       confirmationHistoryPath:
         process.env.MCP_CONFIRM_LOG_PATH ||
         defaultConfig.confirmationHistoryPath,
-      defaultTimeoutMs: parseInt(
-        process.env.MCP_CONFIRM_TIMEOUT_MS ||
-          String(defaultConfig.defaultTimeoutMs),
-        10
-      ),
+      defaultTimeoutMs,
     };
   }
 

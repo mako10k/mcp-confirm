@@ -981,7 +981,9 @@ class ConfirmationMCPServer {
           rating: {
             type: "number",
             title: "Rating (1-10 scale)",
-            description: description || `Rate ${subject} from 1 to 10 (10 is the highest/best)`,
+            description:
+              description ||
+              `Rate ${subject} from 1 to 10 (10 is the highest/best)`,
             minimum: 1,
             maximum: 10,
           },
@@ -993,7 +995,7 @@ class ConfirmationMCPServer {
         },
         required: ["rating"],
       },
-      // Use default timeout instead of hardcoded short timeout  
+      // Use default timeout instead of hardcoded short timeout
       timeoutMs: this.config.defaultTimeoutMs,
     };
 

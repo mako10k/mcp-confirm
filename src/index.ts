@@ -739,16 +739,11 @@ class ConfirmationMCPServer {
 
     const schema: ElicitationSchema = {
       type: "object",
-      properties: {
-        clarification: {
-          type: "string",
-          title: "Please clarify",
-          description: "Please explain what you actually want",
-        },
-      },
+      properties: {},
       required: ["clarification"],
     };
 
+    // Add selected_option FIRST if options exist (for better UX - selection before free text)
     if (options && options.length > 0) {
       message += `\n\n**Options**:\n${options.map((opt: unknown, i: number) => `${i + 1}. ${String(opt)}`).join("\n")}`;
       schema.properties.selected_option = {
@@ -758,6 +753,13 @@ class ConfirmationMCPServer {
         enum: options.map((opt) => String(opt)),
       };
     }
+
+    // Add clarification field AFTER options (better UX - free text input comes after selection)
+    schema.properties.clarification = {
+      type: "string",
+      title: "Additional clarification",
+      description: "Please provide any additional details or explanation",
+    };
 
     const elicitationParams: ElicitationParams = {
       message,

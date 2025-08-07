@@ -30,6 +30,19 @@
 				"MCP_CONFIRM_TIMEOUT_MS": "180000",
 				"NODE_ENV": "production"
 			}
+		},
+		"mcp-shell-server": {
+			"type": "stdio",
+			"command": "npx",
+			"args": [
+				"@mako10k/mcp-shell-server@latest"
+			],
+			"env": {
+				"MCP_SHELL_DEFAULT_WORKDIR": "${workspaceFolder}",
+				"MCP_SHELL_ALLOWED_WORKDIRS": "${workspaceFolder},/tmp,/workspaces",
+				"MCP_SHELL_SECURITY_MODE": "permissive",
+				"MCP_LOG_LEVEL": "info"
+			}
 		}
 	},
 	"inputs": [

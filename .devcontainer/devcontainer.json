@@ -1,0 +1,66 @@
+{
+  "name": "MCP Confirm Development",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye",
+  
+  // Features to add to the dev container. More info: https://containers.dev/features.
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally.
+  // "forwardPorts": [],
+
+  // Use 'postCreateCommand' to run commands after the container is created.
+  "postCreateCommand": ".devcontainer/post-create.sh",
+
+  // Configure tool-specific properties.
+  "customizations": {
+    // Configure properties specific to VS Code.
+    "vscode": {
+      // Set *default* container specific settings.json values on container create.
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "typescript.preferences.includePackageJsonAutoImports": "auto",
+        "typescript.suggest.autoImports": true,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit"
+        },
+        "files.exclude": {
+          "**/node_modules": true,
+          "**/dist": true,
+          "**/.git": true
+        }
+      },
+      
+      // Add the IDs of extensions you want installed when the container is created.
+      "extensions": [
+        "esbenp.prettier-vscode",
+        "ms-vscode.vscode-typescript-next",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml",
+        "ms-vscode.vscode-eslint",
+        "formulahendry.auto-rename-tag",
+        "christian-kohler.path-intellisense",
+        "streetsidesoftware.code-spell-checker",
+        "ms-vscode.vscode-markdown",
+        "bierner.markdown-mermaid",
+        "davidanson.vscode-markdownlint"
+      ]
+    }
+  },
+
+  // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+  // "remoteUser": "root"
+
+  // Use 'mounts' to make the source code available in the container.
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspaces/mcp-confirm,type=bind"
+  ],
+
+  // Environment variables
+  "containerEnv": {
+    "NODE_ENV": "development"
+  }
+}

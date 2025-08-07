@@ -19,7 +19,8 @@
     "format:check": "prettier --check src/**/*.ts",
     "jscpd": "jscpd ./src",
     "quality": "npm run lint && npm run format:check && npm run jscpd",
-    "prepublishOnly": "npm run build && npm run quality"
+    "prepublishOnly": "npm run build && npm run quality",
+    "codespaces:setup": ".devcontainer/post-create.sh"
   },
   "keywords": [
     "mcp",

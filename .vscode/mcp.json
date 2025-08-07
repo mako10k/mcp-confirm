@@ -27,7 +27,7 @@
 			],
 			"env": {
 				"MCP_CONFIRM_LOG_PATH": "${workspaceFolder}/.mcp-data/confirmation_history.log",
-				"MCP_CONFIRM_TIMEOUT_MS": "60000",
+				"MCP_CONFIRM_TIMEOUT_MS": "180000",
 				"NODE_ENV": "production"
 			}
 		}

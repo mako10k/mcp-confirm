@@ -65,6 +65,18 @@ npm install -g @mako10k/mcp-confirm
 npx @mako10k/mcp-confirm
 ```
 
+## Development with GitHub Codespaces
+
+このプロジェクトはGitHub Codespacesでの開発をサポートしています：
+
+1. GitHubでこのリポジトリを開く
+2. 「Code」ボタンをクリック
+3. 「Codespaces」タブを選択
+4. 「Create codespace on main」をクリック
+5. 自動的に開発環境がセットアップされます
+
+詳細は[DEVELOPMENT.md](DEVELOPMENT.md)を参照してください。
+
 ## Configuration
 
 ### Environment Variables

@@ -1,6 +1,6 @@
 # @mako10k/mcp-confirm
 
-AI-ユーザー間の復唱確認プロトコルを実装するMCPサーバーです。LLMが不安になったときに、ユーザーに確認を取るためのツールを提供します。
+An MCP server that implements confirmation protocols between AI and users. It provides tools for LLMs to request user confirmation when they need clarification or verification.
 
 <a href="https://glama.ai/mcp/servers/@mako10k/mcp-confirm">
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@mako10k/mcp-confirm/badge" alt="MCP-Confirm MCP server" />
@@ -71,15 +71,15 @@ npx @mako10k/mcp-confirm
 
 ## Development with GitHub Codespaces
 
-このプロジェクトはGitHub Codespacesでの開発をサポートしています：
+This project supports development with GitHub Codespaces:
 
-1. GitHubでこのリポジトリを開く
-2. 「Code」ボタンをクリック
-3. 「Codespaces」タブを選択
-4. 「Create codespace on main」をクリック
-5. 自動的に開発環境がセットアップされます
+1. Open this repository on GitHub
+2. Click the "Code" button
+3. Select the "Codespaces" tab
+4. Click "Create codespace on main"
+5. The development environment will be set up automatically
 
-詳細は[DEVELOPMENT.md](DEVELOPMENT.md)を参照してください。
+For details, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Configuration
 
@@ -255,114 +255,3 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 - **GitHub**: https://github.com/mako10k/mcp-confirm
 - **npm**: https://www.npmjs.com/package/@mako10k/mcp-confirm
-
-## 機能
-
-### 利用可能なツール
-
-1. **ask_yes_no**
-   - はい/いいえの確認質問
-   - AIが明確化や検証が必要な時に使用
-
-2. **confirm_action**
-   - アクション実行前の確認
-   - 影響や詳細を含めた確認ダイアログ
-
-3. **clarify_intent**
-   - あいまいなリクエストの意図確認
-   - 複数の解釈オプションの提示
-
-4. **verify_understanding**
-   - AIの理解が正しいかの検証
-   - 次のステップの確認
-
-5. **collect_rating**
-   - ユーザー満足度の収集
-   - AIの回答品質の評価
-
-6. **elicit_custom**
-   - カスタム確認ダイアログ
-   - 独自のJSONスキーマを使用
-
-## セットアップ
-
-```bash
-# 依存関係のインストール
-npm install
-
-# ビルド
-npm run build
-
-# 実行（グローバルインストール後）
-npm install -g @mako10k/mcp-confirm
-mcp-confirm
-
-# または npx で直接実行
-npx @mako10k/mcp-confirm
-```
-
-## VS Code統合
-
-`.vscode/mcp.json`でMCPクライアントとして設定済み：
-
-```json
-{
-  "servers": {
-    "mcp-confirm": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["@mako10k/mcp-confirm"]
-    }
-  }
-}
-```
-
-## 使用例
-
-### 基本的な確認
-```javascript
-// AIがアクションを実行する前
-await confirm_action({
-  action: "ファイルを削除",
-  impact: "復元できません",
-  details: "10個のファイルが削除されます"
-});
-```
-
-### 意図の確認
-```javascript
-// あいまいなリクエストの場合
-await clarify_intent({
-  request_summary: "プロジェクトを作成したい",
-  ambiguity: "どの種類のプロジェクトか不明",
-  options: ["Node.js プロジェクト", "Python プロジェクト", "React アプリ"]
-});
-```
-
-### 理解の検証
-```javascript
-// 複雑なタスクの前
-await verify_understanding({
-  understanding: "Webアプリケーションを作成して、ユーザー認証を実装する",
-  key_points: ["React + Node.js", "JWT認証", "PostgreSQLデータベース"],
-  next_steps: "プロジェクト構造を作成してから認証システムを実装"
-});
-```
-
-## 技術仕様
-
-- **プロトコル**: Model Context Protocol Elicitation
-- **言語**: TypeScript
-- **ランタイム**: Node.js
-- **SDKバージョン**: @modelcontextprotocol/sdk ^1.0.0
-
-## プロトコルの仕組み
-
-このサーバーは真のMCP Elicitationプロトコルを実装しており：
-
-1. `elicitation/create`メソッドでクライアントにリクエスト送信
-2. JSONスキーマでユーザー入力の構造を定義
-3. ユーザーは`accept`、`decline`、`cancel`で応答
-4. `accept`の場合、スキーマに従った構造化データを受信
-
-これにより、AIとユーザー間の確実な意思疎通が可能になります。

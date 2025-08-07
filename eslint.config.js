@@ -31,12 +31,12 @@ export default [
     rules: {
       '@typescript-eslint/no-unused-vars': 'error',
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/explicit-function-return-type': 'off', // 緩和
+      '@typescript-eslint/explicit-function-return-type': 'off', // relaxed
       '@typescript-eslint/no-non-null-assertion': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
-      'complexity': ['warn', 15], // 緩和
-      'max-lines-per-function': ['warn', 80], // 緩和
+      'complexity': ['warn', 15], // relaxed
+      'max-lines-per-function': ['warn', 80], // relaxed
       'max-depth': ['warn', 4],
     },
   },

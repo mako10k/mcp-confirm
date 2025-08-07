@@ -198,8 +198,7 @@ class ConfirmationMCPServer {
 
       // Simulate different user actions based on the message content
       if (
-        message.toLowerCase().includes("cancel") ||
-        message.toLowerCase().includes("キャンセル")
+        message.toLowerCase().includes("cancel")
       ) {
         return {
           action: "cancel" as const,
@@ -207,8 +206,7 @@ class ConfirmationMCPServer {
       }
 
       if (
-        message.toLowerCase().includes("decline") ||
-        message.toLowerCase().includes("拒否")
+        message.toLowerCase().includes("decline")
       ) {
         return {
           action: "decline" as const,
@@ -664,15 +662,15 @@ class ConfirmationMCPServer {
   private getConfirmationType(params: ElicitationParams): string {
     // Try to infer confirmation type from message content
     const message = params.message.toLowerCase();
-    if (message.includes("confirm") || message.includes("確認")) {
+    if (message.includes("confirm")) {
       return "confirmation";
-    } else if (message.includes("rate") || message.includes("評価")) {
+    } else if (message.includes("rate")) {
       return "rating";
-    } else if (message.includes("clarify") || message.includes("明確")) {
+    } else if (message.includes("clarify")) {
       return "clarification";
-    } else if (message.includes("verify") || message.includes("検証")) {
+    } else if (message.includes("verify")) {
       return "verification";
-    } else if (message.includes("yes/no") || message.includes("はい/いいえ")) {
+    } else if (message.includes("yes/no")) {
       return "yes_no";
     } else {
       return "custom";
@@ -685,9 +683,7 @@ class ConfirmationMCPServer {
     const impactLower = impact.toLowerCase();
     if (
       impactLower.includes("delete") ||
-      impactLower.includes("remove") ||
-      impactLower.includes("削除") ||
-      impactLower.includes("破壊")
+      impactLower.includes("remove")
     ) {
       return 120000; // 2 minutes for critical actions
     } else if (impactLower.includes("warning")) {

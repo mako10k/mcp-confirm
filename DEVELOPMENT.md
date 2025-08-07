@@ -1,34 +1,34 @@
 # Development Setup
 
-このプロジェクトはGitHub Codespacesでの開発に最適化されています。
+This project is optimized for development with GitHub Codespaces.
 
 ## Quick Start
 
-1. GitHub Codespacesでこのリポジトリを開く
-2. 自動的にセットアップが実行されます
-3. セットアップ完了後、以下のコマンドが使用可能です：
+1. Open this repository in GitHub Codespaces
+2. Setup will run automatically
+3. After setup is complete, the following commands are available:
 
 ## Available Commands
 
 ```bash
-# 開発モード（TypeScriptコンパイル + 実行）
+# Development mode (TypeScript compile + run)
 npm run dev
 
-# プロジェクトをビルド
+# Build project
 npm run build
 
-# ビルド済みプロジェクトを実行
+# Run built project
 npm start
 
-# コード品質チェック
+# Code quality check
 npm run lint
 npm run format:check
 
-# コード自動修正
+# Auto-fix code
 npm run lint:fix
 npm run format
 
-# 全品質チェック
+# All quality checks
 npm run quality
 ```
 
@@ -38,79 +38,79 @@ npm run quality
 
 - **Base Image**: `mcr.microsoft.com/devcontainers/typescript-node:1-20-bullseye`
 - **Node.js**: v20
-- **包含機能**: Git, GitHub CLI
+- **Included Features**: Git, GitHub CLI
 
 ### VS Code Extensions
 
-自動的にインストールされる拡張機能：
-- Prettier - コードフォーマッター
-- ESLint - リンター
-- TypeScript拡張
-- Markdown拡張
+Automatically installed extensions:
+- Prettier - Code formatter
+- ESLint - Linter
+- TypeScript extensions
+- Markdown extensions
 - Path IntelliSense
 - Auto Rename Tag
 
 ### Environment Variables
 
-開発環境では以下の環境変数が設定されます：
+The following environment variables are set in the development environment:
 - `NODE_ENV=development`
 
 ## Project Structure
 
 ```
 .
-├── .devcontainer/          # Dev Container設定
-│   ├── devcontainer.json  # メイン設定
-│   └── post-create.sh     # セットアップスクリプト
-├── .vscode/               # VS Code設定
-│   ├── settings.json      # エディタ設定
-│   ├── tasks.json        # タスク定義
-│   ├── launch.json       # デバッグ設定
-│   └── mcp.json          # MCP設定
-├── src/                  # ソースコード
-├── dist/                 # ビルド出力
-└── .mcp-data/           # ログデータ
+├── .devcontainer/          # Dev Container configuration
+│   ├── devcontainer.json  # Main configuration
+│   └── post-create.sh     # Setup script
+├── .vscode/               # VS Code configuration
+│   ├── settings.json      # Editor settings
+│   ├── tasks.json        # Task definitions
+│   ├── launch.json       # Debug configuration
+│   └── mcp.json          # MCP configuration
+├── src/                  # Source code
+├── dist/                 # Build output
+└── .mcp-data/           # Log data
 ```
 
 ## Debugging
 
-デバッグ設定が含まれています：
-1. F5キーまたは「Run and Debug」パネルから「Debug MCP Elicitation Server」を選択
-2. ブレークポイントを設定して実行
+Debug configuration is included:
+1. Press F5 or select "Debug MCP Elicitation Server" from the "Run and Debug" panel
+2. Set breakpoints and run
 
 ## Testing the MCP Server
 
-ローカルでMCPサーバーをテストする場合：
+To test the MCP server locally:
 
 ```bash
-# サーバーを起動
+# Start server
 npm start
 
-# または開発モード
+# Or development mode
 npm run dev
 ```
 
 ## Troubleshooting
 
-### セットアップが失敗した場合
+### If setup fails
 
 ```bash
-# 手動でセットアップスクリプトを実行
+# Manually run setup script
 ./.devcontainer/post-create.sh
 ```
 
-### 依存関係の問題
+### Dependency issues
 
 ```bash
-# node_modulesを削除して再インストール
+# Remove node_modules and reinstall
 rm -rf node_modules package-lock.json
 npm install
 ```
 
-### ビルドエラー
+### Build errors
 
 ```bash
-# TypeScriptキャッシュをクリア
+# Clear TypeScript cache
 rm -rf dist/
 npx tsc --build --clean
 npm run build

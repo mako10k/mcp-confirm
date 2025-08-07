@@ -113,12 +113,18 @@ class ConfirmationMCPServer {
     let defaultTimeoutMs = defaultConfig.defaultTimeoutMs;
     const timeoutEnv = process.env.MCP_CONFIRM_TIMEOUT_MS;
 
+    // Define timeout range constraints
+    const minTimeout = 5000; // 5 seconds
+    const maxTimeout = 1800000; // 30 minutes
+
     if (timeoutEnv) {
       const parsedTimeout = parseInt(timeoutEnv, 10);
-      if (!isNaN(parsedTimeout) && parsedTimeout > 0) {
+      this.log(
+        `Parsing timeout from environment: "${timeoutEnv}" -> ${parsedTimeout}ms`
+      );
+
+      if (!isNaN(parsedTimeout) && parsedTimeout >= minTimeout) {
         // Validate timeout range (minimum 5 seconds, maximum 30 minutes)
-        const minTimeout = 5000; // 5 seconds
-        const maxTimeout = 1800000; // 30 minutes
 
         if (parsedTimeout < minTimeout) {
           this.log(
@@ -138,7 +144,7 @@ class ConfirmationMCPServer {
         }
       } else {
         this.log(
-          `Warning: Invalid timeout value "${timeoutEnv}", using default ${defaultConfig.defaultTimeoutMs}ms`
+          `Warning: Invalid timeout value "${timeoutEnv}" (parsed: ${parsedTimeout}), using default ${defaultConfig.defaultTimeoutMs}ms`
         );
       }
     }
